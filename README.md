@@ -7,7 +7,7 @@ For now, I've added these:
 
 Football: Jupiler Pro League (Men), Lotto Super League (Women)
 
-Basketball: BNXT League 2025-2026
+Basketball: BNXT League 
 
 Volleyball: Belgian Volley League (Women), Lotto Volley League (Men)
 
@@ -21,9 +21,10 @@ Still, upon skimming through the data, it can be said that most of them are corr
 What can you ask it?
 You can ask it things like:
 "Matches in Brussels this weekend?" 
-"Are there any Pro League matches in Antwerp next week"
+"Wat kan ik de komende week doen in de omgeving van Mechelen, Antwerpen en Gent?"
+"What can I do for the next week around Mechelen, Antwerp and Ghent?
 "What leagues are available?"
-"Events near me tomorrow" (this works if you provide your location)
+"Events near me tomorrow" 
 
 The bot tries to understand your question, figures out the dates and places, and finds the relevant matches from Belgian leagues in the database.
 
@@ -32,7 +33,7 @@ The bot tries to understand your question, figures out the dates and places, and
 ## Tech I Used
 Cursor: It helped me a lot on fixing syntax errors and consturcting boilerplate code. 
 
-FastAPI: async, query validation 
+FastAPI: asyncio, query validation 
 
 Pydantic: data validation, expecially refraining injections. 
 
