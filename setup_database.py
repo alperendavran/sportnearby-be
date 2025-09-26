@@ -14,7 +14,14 @@ from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass
 
-# Database configuration
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+
+# Data file path - JSON format (converted from Excel)
+DATA_FILE_PATH = "sports_events.json"
+
+# Database connection settings
 DB_CONFIG = {
     "host": "localhost",
     "port": 5432,
@@ -23,8 +30,13 @@ DB_CONFIG = {
     "password": None  # macOS PostgreSQL default
 }
 
+# =============================================================================
+# DATA MODELS
+# =============================================================================
+
 @dataclass
 class VenueData:
+    """Venue data structure"""
     name: str
     city: str
     latitude: float
@@ -33,78 +45,84 @@ class VenueData:
 
 @dataclass
 class CompetitionData:
+    """Competition data structure"""
     name: str
     season: str
     country: str = "Belgium"
 
 @dataclass
 class EventData:
+    """Event data structure"""
     match_name: str
     venue_id: int
     competition_id: int
     datetime_local: datetime
     week: Optional[int] = None
 
+# =============================================================================
+# DATABASE MANAGEMENT
+# =============================================================================
+
 class DatabaseManager:
-    """Database işlemleri için Single Responsibility Principle"""
+    """Database operations following Single Responsibility Principle"""
     
     def __init__(self, config: dict):
         self.config = config
         self.connection = None
     
     def connect(self):
-        """Database bağlantısı kur"""
+        """Establish database connection"""
         try:
             self.connection = psycopg.connect(**self.config, row_factory=dict_row)
-            print("✅ Database bağlantısı kuruldu")
+            print("✅ Database connection established")
             return True
         except Exception as e:
-            print(f"❌ Database bağlantı hatası: {e}")
+            print(f"❌ Database connection error: {e}")
             return False
     
     def close(self):
-        """Database bağlantısını kapat"""
+        """Close database connection"""
         if self.connection:
             self.connection.close()
-            print("🔌 Database bağlantısı kapatıldı")
+            print("🔌 Database connection closed")
     
     def execute_sql(self, sql: str, params: tuple = None):
-        """SQL sorgusu çalıştır"""
+        """Execute SQL query"""
         try:
             with self.connection.cursor() as cur:
                 cur.execute(sql, params)
-                if cur.description:  # SELECT sorgusu ise
+                if cur.description:  # SELECT query
                     return cur.fetchall()
-                else:  # INSERT/UPDATE/DELETE sorgusu ise
+                else:  # INSERT/UPDATE/DELETE query
                     self.connection.commit()
                     return cur.rowcount
         except Exception as e:
-            print(f"❌ SQL hatası: {e}")
+            print(f"❌ SQL error: {e}")
             self.connection.rollback()
             return None
 
 class SchemaManager:
-    """Database schema yönetimi için"""
+    """Database schema management"""
     
     def __init__(self, db_manager: DatabaseManager):
         self.db = db_manager
     
     def create_extensions(self):
-        """PostgreSQL eklentilerini kur"""
+        """Install PostgreSQL extensions"""
         sql = """
-        -- PostGIS eklentisi
+        -- PostGIS extension
         CREATE EXTENSION IF NOT EXISTS postgis;
         CREATE EXTENSION IF NOT EXISTS postgis_topology;
         """
         
         result = self.db.execute_sql(sql)
         if result is not None:
-            print("✅ PostgreSQL eklentileri kuruldu")
+            print("✅ PostgreSQL extensions installed")
             return True
         return False
     
     def drop_all_tables(self):
-        """Tüm tabloları sil (temiz başlangıç için)"""
+        """Drop all tables (for clean start)"""
         sql = """
         DROP TABLE IF EXISTS events CASCADE;
         DROP TABLE IF EXISTS venues CASCADE;
@@ -113,12 +131,12 @@ class SchemaManager:
         
         result = self.db.execute_sql(sql)
         if result is not None:
-            print("🗑️ Mevcut tablolar silindi")
+            print("🗑️ Existing tables dropped")
             return True
         return False
     
     def create_venues_table(self):
-        """Venues tablosunu oluştur"""
+        """Create venues table"""
         sql = """
         CREATE TABLE venues (
             id BIGSERIAL PRIMARY KEY,
@@ -147,12 +165,12 @@ class SchemaManager:
         
         result = self.db.execute_sql(sql)
         if result is not None:
-            print("✅ Venues tablosu oluşturuldu")
+            print("✅ Venues table created")
             return True
         return False
     
     def create_competitions_table(self):
-        """Competitions tablosunu oluştur"""
+        """Create competitions table"""
         sql = """
         CREATE TABLE competitions (
             id BIGSERIAL PRIMARY KEY,
@@ -172,12 +190,12 @@ class SchemaManager:
         
         result = self.db.execute_sql(sql)
         if result is not None:
-            print("✅ Competitions tablosu oluşturuldu")
+            print("✅ Competitions table created")
             return True
         return False
     
     def create_events_table(self):
-        """Events tablosunu oluştur"""
+        """Create events table"""
         sql = """
         CREATE TABLE events (
             id BIGSERIAL PRIMARY KEY,
@@ -204,12 +222,12 @@ class SchemaManager:
         
         result = self.db.execute_sql(sql)
         if result is not None:
-            print("✅ Events tablosu oluşturuldu")
+            print("✅ Events table created")
             return True
         return False
     
     def create_all_tables(self):
-        """Tüm tabloları oluştur"""
+        """Create all tables"""
         if not self.create_extensions():
             return False
         
@@ -225,17 +243,21 @@ class SchemaManager:
         if not self.create_events_table():
             return False
         
-        print("🏗️ Tüm tablolar başarıyla oluşturuldu")
+        print("🏗️ All tables created successfully")
         return True
 
+# =============================================================================
+# REPOSITORY PATTERN
+# =============================================================================
+
 class VenueRepository:
-    """Venue verileri için Repository Pattern"""
+    """Repository pattern for venue data"""
     
     def __init__(self, db_manager: DatabaseManager):
         self.db = db_manager
     
     def insert_venue(self, venue: VenueData) -> Optional[int]:
-        """Venue ekle ve ID'sini döndür"""
+        """Insert venue and return ID"""
         sql = """
         INSERT INTO venues (name, city, country, latitude, longitude) 
         VALUES (%s, %s, %s, %s, %s) 
@@ -253,23 +275,23 @@ class VenueRepository:
                 self.db.connection.commit()
                 return result['id'] if result else None
         except Exception as e:
-            print(f"❌ Venue ekleme hatası: {e}")
+            print(f"❌ Venue insertion error: {e}")
             return None
     
     def get_venue_by_name_city(self, name: str, city: str) -> Optional[int]:
-        """Name ve city'ye göre venue ID'sini getir"""
+        """Get venue ID by name and city"""
         sql = "SELECT id FROM venues WHERE name = %s AND city = %s;"
         result = self.db.execute_sql(sql, (name, city))
         return result[0]['id'] if result else None
 
 class CompetitionRepository:
-    """Competition verileri için Repository Pattern"""
+    """Repository pattern for competition data"""
     
     def __init__(self, db_manager: DatabaseManager):
         self.db = db_manager
     
     def insert_competition(self, competition: CompetitionData) -> Optional[int]:
-        """Competition ekle ve ID'sini döndür"""
+        """Insert competition and return ID"""
         sql = """
         INSERT INTO competitions (name, season, country) 
         VALUES (%s, %s, %s) 
@@ -289,19 +311,19 @@ class CompetitionRepository:
                 self.db.connection.commit()
                 return result['id'] if result else None
         except Exception as e:
-            print(f"❌ Competition ekleme hatası: {e}")
+            print(f"❌ Competition insertion error: {e}")
             return None
 
 class EventRepository:
-    """Event verileri için Repository Pattern"""
+    """Repository pattern for event data"""
     
     def __init__(self, db_manager: DatabaseManager):
         self.db = db_manager
     
     def insert_events(self, events: List[EventData]) -> bool:
-        """Event listesini ekle"""
+        """Insert list of events"""
         if not events:
-            print("⚠️ Eklenecek event yok")
+            print("⚠️ No events to insert")
             return False
         
         sql = """
@@ -319,32 +341,36 @@ class EventRepository:
                 ]
                 cur.executemany(sql, event_tuples)
                 self.db.connection.commit()
-                print(f"✅ {len(events)} event eklendi")
+                print(f"✅ {len(events)} events inserted")
                 return True
         except Exception as e:
-            print(f"❌ Event ekleme hatası: {e}")
+            print(f"❌ Event insertion error: {e}")
             return False
 
-class ExcelDataProcessor:
-    """Excel verilerini işlemek için Single Responsibility"""
+# =============================================================================
+# JSON DATA PROCESSING
+# =============================================================================
+
+class JSONDataProcessor:
+    """JSON data processing following Single Responsibility Principle"""
     
-    def __init__(self, excel_file: str):
-        self.excel_file = excel_file
+    def __init__(self, json_file: str):
+        self.json_file = json_file
         self.venues = {}  # name+city -> VenueData
         self.competitions = {}  # name+season -> CompetitionData
     
     def load_data(self) -> pd.DataFrame:
-        """Excel dosyasından veri yükle"""
+        """Load data from JSON file"""
         try:
-            df = pd.read_excel(self.excel_file, sheet_name='Tüm Maçlar')
-            print(f"✅ Excel verisi yüklendi: {len(df)} satır")
+            df = pd.read_json(self.json_file)
+            print(f"✅ JSON data loaded: {len(df)} rows")
             return df
         except Exception as e:
-            print(f"❌ Excel yükleme hatası: {e}")
+            print(f"❌ JSON loading error: {e}")
             return pd.DataFrame()
     
     def extract_venues(self, df: pd.DataFrame) -> List[VenueData]:
-        """DataFrame'den unique venue'leri çıkar"""
+        """Extract unique venues from DataFrame"""
         venues = []
         venue_set = set()
         
@@ -354,7 +380,7 @@ class ExcelDataProcessor:
             lat = row.get('latitude')
             lon = row.get('longitude')
             
-            # Boş veya geçersiz veriler
+            # Skip empty or invalid data
             if not venue_name or not venue_city or pd.isna(lat) or pd.isna(lon):
                 continue
             
@@ -370,11 +396,11 @@ class ExcelDataProcessor:
                 venues.append(venue_data)
                 self.venues[venue_key] = venue_data
         
-        print(f"✅ {len(venues)} unique venue çıkarıldı")
+        print(f"✅ {len(venues)} unique venues extracted")
         return venues
     
     def extract_competitions(self, df: pd.DataFrame) -> List[CompetitionData]:
-        """DataFrame'den unique competition'ları çıkar"""
+        """Extract unique competitions from DataFrame"""
         competitions = []
         competition_set = set()
         
@@ -385,7 +411,7 @@ class ExcelDataProcessor:
             if not competition_name:
                 continue
             
-            # Season info'dan season çıkar
+            # Extract season from season info
             season = season_info.split(' | ')[0] if ' | ' in season_info else season_info
             if not season:
                 season = "2024-2025"  # Default season
@@ -400,12 +426,12 @@ class ExcelDataProcessor:
                 competitions.append(comp_data)
                 self.competitions[competition_key] = comp_data
         
-        print(f"✅ {len(competitions)} unique competition çıkarıldı")
+        print(f"✅ {len(competitions)} unique competitions extracted")
         return competitions
     
     def process_events(self, df: pd.DataFrame, venue_repo: VenueRepository, 
                       competition_repo: CompetitionRepository) -> List[EventData]:
-        """DataFrame'den event'leri işle"""
+        """Process events from DataFrame"""
         events = []
         
         for _, row in df.iterrows():
@@ -420,7 +446,7 @@ class ExcelDataProcessor:
                 venue_city = str(row.get('venue_city', '')).strip()
                 venue_id = venue_repo.get_venue_by_name_city(venue_name, venue_city)
                 if not venue_id:
-                    print(f"⚠️ Venue bulunamadı: {venue_name}, {venue_city}")
+                    print(f"⚠️ Venue not found: {venue_name}, {venue_city}")
                     continue
                 
                 # Competition ID
@@ -432,7 +458,7 @@ class ExcelDataProcessor:
                 
                 competition_key = (competition_name, season)
                 if competition_key not in self.competitions:
-                    print(f"⚠️ Competition bulunamadı: {competition_name}, {season}")
+                    print(f"⚠️ Competition not found: {competition_name}, {season}")
                     continue
                 
                 # Get competition ID from database
@@ -443,7 +469,7 @@ class ExcelDataProcessor:
                     competition_id = result[0]['id']
                 
                 if not competition_id:
-                    print(f"⚠️ Competition ID bulunamadı: {competition_name}, {season}")
+                    print(f"⚠️ Competition ID not found: {competition_name}, {season}")
                     continue
                 
                 # Datetime
@@ -476,49 +502,52 @@ class ExcelDataProcessor:
                 events.append(event)
                 
             except Exception as e:
-                print(f"⚠️ Event işleme hatası: {e}")
+                print(f"⚠️ Event processing error: {e}")
                 continue
         
-        print(f"✅ {len(events)} event işlendi")
+        print(f"✅ {len(events)} events processed")
         return events
 
+# =============================================================================
+# MAIN EXECUTION
+# =============================================================================
+
 def main():
-    """Ana fonksiyon"""
+    """Main execution function"""
     print("=" * 80)
     print("🏆 PROFESSIONAL POSTGRESQL + POSTGIS SPORTS EVENTS DATABASE")
     print("=" * 80)
     
-    # Excel dosyası kontrolü
-    excel_file = "tum_ligler_tek_sheet.xlsx"
-    if not Path(excel_file).exists():
-        print(f"❌ Excel dosyası bulunamadı: {excel_file}")
+    # Check Excel file existence
+    if not Path(EXCEL_FILE_PATH).exists():
+        print(f"❌ Excel file not found: {EXCEL_FILE_PATH}")
         return
     
-    # Database bağlantısı
+    # Database connection
     db_manager = DatabaseManager(DB_CONFIG)
     if not db_manager.connect():
         return
     
     try:
-        # Schema oluştur
+        # Create schema
         schema_manager = SchemaManager(db_manager)
         if not schema_manager.create_all_tables():
             return
         
-        # Repositories
+        # Initialize repositories
         venue_repo = VenueRepository(db_manager)
         competition_repo = CompetitionRepository(db_manager)
         event_repo = EventRepository(db_manager)
         
-        # Excel verilerini işle
-        processor = ExcelDataProcessor(excel_file)
+        # Process JSON data
+        processor = JSONDataProcessor(DATA_FILE_PATH)
         df = processor.load_data()
         
         if df.empty:
             return
         
-        # 1. Venues ekle
-        print("\n📍 VENUES İŞLENİYOR...")
+        # 1. Insert venues
+        print("\n📍 PROCESSING VENUES...")
         venues = processor.extract_venues(df)
         venue_ids = []
         for venue in venues:
@@ -526,10 +555,10 @@ def main():
             if venue_id:
                 venue_ids.append(venue_id)
         
-        print(f"✅ {len(venue_ids)} venue eklendi")
+        print(f"✅ {len(venue_ids)} venues inserted")
         
-        # 2. Competitions ekle
-        print("\n🏆 COMPETITIONS İŞLENİYOR...")
+        # 2. Insert competitions
+        print("\n🏆 PROCESSING COMPETITIONS...")
         competitions = processor.extract_competitions(df)
         competition_ids = []
         for competition in competitions:
@@ -537,20 +566,20 @@ def main():
             if competition_id:
                 competition_ids.append(competition_id)
         
-        print(f"✅ {len(competition_ids)} competition eklendi")
+        print(f"✅ {len(competition_ids)} competitions inserted")
         
-        # 3. Events ekle
-        print("\n⚽ EVENTS İŞLENİYOR...")
+        # 3. Insert events
+        print("\n⚽ PROCESSING EVENTS...")
         events = processor.process_events(df, venue_repo, competition_repo)
         if events:
             event_repo.insert_events(events)
         
-        # Sonuçları göster
+        # Show results
         print("\n" + "="*80)
-        print("🎉 DATABASE SETUP TAMAMLANDI!")
+        print("🎉 DATABASE SETUP COMPLETED!")
         print("="*80)
         
-        # İstatistikler
+        # Statistics
         stats_queries = [
             ("Venues", "SELECT COUNT(*) as count FROM venues"),
             ("Competitions", "SELECT COUNT(*) as count FROM competitions"),
@@ -562,8 +591,8 @@ def main():
             if result:
                 print(f"📊 {name}: {result[0]['count']}")
         
-        # Test sorguları
-        print("\n🔍 TEST SORGUSU:")
+        # Test queries
+        print("\n🔍 TEST QUERY:")
         test_sql = """
         SELECT 
             e.match_name,
@@ -589,6 +618,10 @@ def main():
     
     finally:
         db_manager.close()
+
+# =============================================================================
+# SCRIPT EXECUTION
+# =============================================================================
 
 if __name__ == "__main__":
     main()
