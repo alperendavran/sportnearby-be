@@ -11,7 +11,7 @@ Volleyball: Belgian Volley League (Women), Lotto Volley League (Men)
 ## Where is data obtained ? 
 I used official websites of each competetions. Also I shared scrappers in repo.
 
-Unfortunately, not all venue coordinates are accurate. Nominatim, which uses OpenStreetMap data, was employed. 
+Unfortunately, not all venue coordinates are accurate. Nominatim, which uses OpenStreetMap data, was employed to obtain corddianted from given address of venues. 
 However, it did not provide the most accurate coordinates for all venues.
 Still, upon skimming through the data, it can be said that most of them are correct.
 
