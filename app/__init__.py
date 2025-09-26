@@ -1,1 +1,1 @@
-# Belgian Sports Events RAG System
+# AI Sports Events Agent

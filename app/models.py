@@ -1,50 +1,112 @@
-from pydantic import BaseModel, field_validator
-from typing import Optional, Literal
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Pydantic models and data structures
+"""
 
-HomeAway = Literal["home", "away", "any"]
+from typing import Optional, List, Literal
+from datetime import datetime
+from enum import Enum
+from pydantic import BaseModel, Field
+from zoneinfo import ZoneInfo
 
-class Filters(BaseModel):
-    team: Optional[str] = None
-    opponent: Optional[str] = None
-    home_away: HomeAway = "any"
-    competition: Optional[str] = None
-    city: Optional[str] = None
-    venue: Optional[str] = None
-    date_from: Optional[str] = None  # YYYY-MM-DD
-    date_to: Optional[str] = None
-    weekday: Optional[Literal["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]] = None
-    time_gte: Optional[str] = None   # HH:MM
-    time_lte: Optional[str] = None
+TZ = ZoneInfo("Europe/Brussels")
+
+
+class Point(BaseModel):
+    lat: float
+    lon: float
+
+
+class GeocodeOut(BaseModel):
     lat: Optional[float] = None
     lon: Optional[float] = None
-    radius_km: Optional[int] = 30
+    confidence: int = 0
+    status: str = "UNKNOWN"  # "OK" | "UNKNOWN"
+    source_text: Optional[str] = None
+    provider: str = "ollama"
+
+
+class CityMention(BaseModel):
+    text: str
+    normalized: str
+    type: Literal["city", "municipality", "region"]
+    confidence: int = Field(ge=0, le=100)
+
+
+class ExtractOut(BaseModel):
+    mentions: List[CityMention]
+    chosen: Optional[CityMention] = None
+
+
+class MatchOut(BaseModel):
+    id: int
+    match_name: str
+    datetime_local: str
     week: Optional[int] = None
+    competition_id: int
+    competition: str
+    venue_id: int
+    venue: str
+    city: Optional[str] = None
+    country: str
+    latitude: float
+    longitude: float
+    geom: str
+    distance_km: float
 
-    @field_validator("competition")
-    @classmethod
-    def whitelist_comp(cls, v):
-        if not v: return v
-        allow = {
-            "Jupiler Pro League",
-            "Lotto Super League", 
-            "BNXT League 2025 - 2026",
-            "LOTTO VOLLEY LEAGUE MEN",
-            "BELGIAN VOLLEY LEAGUE WOMEN"
-        }
-        return v if v in allow else None
 
-    @field_validator("radius_km")
-    @classmethod
-    def clamp_radius(cls, v):
-        if v is None: return None
-        return max(1, min(int(v), 100))
+class DateRangeOut(BaseModel):
+    status: Literal["OK","UNCLEAR","NO_TIME"]
+    time_keyword: Optional[Literal[
+        "today","tonight","tomorrow",
+        "this_weekend","next_weekend",
+        "this_week","next_week","weeks_ahead","next_year",
+        "soon","later"
+    ]] = None
+    date_from: Optional[str] = None   # YYYY-MM-DD
+    date_to: Optional[str] = None     # YYYY-MM-DD
+    confidence: int = Field(ge=0, le=100, default=80)
 
-class QueryRequest(BaseModel):
-    query: str
-    user_location: Optional[dict] = None  # {"lat": 50.8503, "lon": 4.3517}
 
-class QueryResponse(BaseModel):
-    filters: Filters
-    sql_query: Optional[str] = None
-    results: Optional[list] = None
-    explanation: Optional[str] = None
+class IntentSlots(BaseModel):
+    cities: List[str] = []
+    competitions: List[str] = []
+    venues: List[str] = []
+    radius_km: Optional[float] = None
+    date_from: Optional[str] = None   # YYYY-MM-DD
+    date_to: Optional[str] = None
+    week: Optional[int] = None
+    sort: Optional[Literal["distance","time"]] = "distance"
+
+
+class Intent(str, Enum):
+    events_near = "events_near"
+    events_in_cities = "events_in_cities"
+    events_by_competition = "events_by_competition"
+    events_by_venue = "events_by_venue"
+    next_at_venue = "next_at_venue"
+    venues_near = "venues_near"
+    list_competitions = "list_competitions"
+    events_by_timeframe = "events_by_timeframe"
+    unclear_query = "unclear_query"
+
+
+class IntentDecision(BaseModel):
+    intent: Intent
+    slots: IntentSlots
+
+
+class CityGeocodeItem(BaseModel):
+    name: str
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    confidence: int = 0
+    status: str = "UNKNOWN"  # "OK" | "UNKNOWN"
+
+
+class PipelineGeocodeOut(BaseModel):
+    items: List[CityGeocodeItem]
+    total: int
+    successful: int
+    failed: int
