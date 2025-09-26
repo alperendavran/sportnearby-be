@@ -27,14 +27,21 @@ The bot tries to understand your question, figures out the dates and places, and
 <img width="1037" height="632" alt="Screenshot 2025-09-26 at 20 49 12" src="https://github.com/user-attachments/assets/322edd09-c587-488b-98ab-0bcd9562a8d8" />
 
 ## Tech I Used
-Cursor: It helped me a lot on fixing syntax errors and consturcting boilerplate code.
-FastAPI: async, query validation
-Pydantic: data validation, expecially refraining injections.
-AsyncPG: Parameterized queries
-Ollama: To run the llama3.1 model locally on my mac!
-PostgreSQL + PostGIS: For storing the match and stadium locations on a map. PostGIS is for geo queries.
-LangGraph: This helped me build a flowchart for the AI to decide what to do.
-LangSmith:  Observability
+Cursor: It helped me a lot on fixing syntax errors and consturcting boilerplate code. 
+
+FastAPI: async, query validation 
+
+Pydantic: data validation, expecially refraining injections. 
+
+AsyncPG: Parameterized queries 
+
+Ollama: To run the llama3.1 model locally on my mac! 
+
+PostgreSQL + PostGIS: For storing the match and stadium locations on a map. PostGIS is for geo queries. 
+
+LangGraph: This helped me build a flowchart for the AI to decide what to do. 
+
+LangSmith:  Observability 
 
 ## How it Works 
 So when you ask something, first a small AI model (I'm using llama3.1 with Ollama) tries to figure out what you want. Like, are you looking for a place, a time, or a league? Then I ask the AI again to turn stuff like "next week" into actual dates like 2025-10-03. Once it has the location (it geocodes it), it uses all that info to search the PostGIS database.
