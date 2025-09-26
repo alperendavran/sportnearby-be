@@ -4,8 +4,11 @@ This is my project for finding sports events in Belgium. I was tired of checking
 
 ## What's in the Database?
 For now, I've added these:
+
 Football: Jupiler Pro League (Men), Lotto Super League (Women)
+
 Basketball: BNXT League 2025-2026
+
 Volleyball: Belgian Volley League (Women), Lotto Volley League (Men)
 
 ## Where is data obtained ? 
