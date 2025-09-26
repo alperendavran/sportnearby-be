@@ -1,0 +1,86 @@
+{
+    "intent": "events_near",
+    "query": "What can I do for the next week around Mechelen, Antwerp, Ghent?",
+    "count": 3,
+    "results": [
+      {
+        "id": 103,
+        "match_name": "Royal Antwerp FC vs Cercle Brugge KSV",
+        "datetime_local": "2025-10-04T18:45:00+00:00",
+        "week": 10,
+        "competition_id": 1,
+        "competition": "Jupiler Pro League",
+        "venue_id": 1,
+        "venue": "Bosuilstadion",
+        "city": "nan",
+        "country": "Belgium",
+        "latitude": 51.2325696,
+        "longitude": 4.4717722,
+        "geom": "0101000020E6100000DCA5684018E311409B0535D7C49D4940",
+        "distance_km": 5.20506140584
+      },
+      {
+        "id": 101,
+        "match_name": "KV Mechelen vs STVV",
+        "datetime_local": "2025-10-04T14:00:00+00:00",
+        "week": 10,
+        "competition_id": 1,
+        "competition": "Jupiler Pro League",
+        "venue_id": 9,
+        "venue": "AFAS Stadion",
+        "city": "nan",
+        "country": "Belgium",
+        "latitude": 51.0370954,
+        "longitude": 4.4863869,
+        "geom": "0101000020E6100000B1CF52680FF2114080EAC48ABF844940",
+        "distance_km": 12.81670278368
+      },
+      {
+        "id": 108,
+        "match_name": "Kangoeroes Basket Mechelen vs Windrose Giants Antwerp",
+        "datetime_local": "2025-10-04T20:30:00+00:00",
+        "week": null,
+        "competition_id": 3,
+        "competition": "BNXT League 2025 - 2026",
+        "venue_id": 38,
+        "venue": "Winketkaai",
+        "city": "nan",
+        "country": "Belgium",
+        "latitude": 51.0315845,
+        "longitude": 4.4696204,
+        "geom": "0101000020E610000044238E2BE4E01140BF47FDF50A844940",
+        "distance_km": 13.24524924689
+      }
+    ],
+    "filters": {
+      "cities": [
+        "Mechelen",
+        "Antwerp",
+        "Ghent"
+      ],
+      "competitions": [],
+      "venues": [],
+      "radius_km": 25,
+      "date_from": "2025-09-28",
+      "date_to": "2025-10-04",
+      "time_keyword": "this_week"
+    },
+    "processing_steps": [
+      "classify_intent",
+      "intent_classified: Intent.events_near",
+      "resolve_dates",
+      "dates_resolved: 2025-09-28 to 2025-10-04 (keyword: this_week)",
+      "resolve_location",
+      "location_from_city: Mechelen",
+      "location_from_city: Antwerp",
+      "location_from_city: Ghent",
+      "location_resolved: 3 coordinates",
+      "search_events",
+      "search_coord: 51.150,4.450 -\u003E 3 results",
+      "search_coord: 51.220,4.400 -\u003E 3 results",
+      "search_coord: 51.200,3.750 -\u003E 0 results",
+      "search_completed: 3 unique results",
+      "post_process",
+      "post_completed: 3 final results"
+    ]
+  }
